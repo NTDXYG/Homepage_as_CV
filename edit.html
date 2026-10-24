@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>编辑内容 · Homepage CV</title>
+  <link rel="icon" type="image/png" href="assets/logo.svg">
+  <link rel="stylesheet" href="layui/css/layui.css">
+  <link rel="stylesheet" href="assets/edit.css">
+</head>
+<body class="editor">
+  <header class="editor-top">
+    <div class="editor-top-inner">
+      <div>
+        <p class="editor-kicker">Homepage CV</p>
+        <h1>编辑内容</h1>
+      </div>
+      <div class="editor-actions">
+        <a class="layui-btn layui-btn-primary layui-btn-sm" href="index.html" target="_blank">
+          <i class="layui-icon layui-icon-preview"></i> 查看主页
+        </a>
+        <button type="button" class="layui-btn layui-btn-primary layui-btn-sm" data-action="open-folder">
+          <i class="layui-icon layui-icon-folder-open"></i> 打开文件夹
+        </button>
+        <button type="button" class="layui-btn layui-btn-sm" data-action="save-all">
+          <i class="layui-icon layui-icon-ok"></i> 保存全部
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <p class="banner layui-elem-quote layui-quote-nm" id="banner" hidden>
+    没有读到当前目录的 data/*.js。请确认这些文件和本页在一起，或点「打开文件夹」。
+  </p>
+  <input id="folder-input" type="file" webkitdirectory multiple hidden>
+
+  <main class="editor-main" id="main">
+    <p class="lead">
+      按步骤填写：先是网站设置，然后是个人信息，再依次维护 5 个章节。每步都可以单独保存，也可以随时点右上角「保存全部」。
+    </p>
+
+    <div class="layui-tab layui-tab-brief editor-steps" lay-filter="steps">
+      <ul class="layui-tab-title">
+        <li class="layui-this" lay-id="0"><i class="layui-icon layui-icon-set"></i> 网站设置</li>
+        <li lay-id="1"><i class="layui-icon layui-icon-username"></i> 个人信息</li>
+        <li lay-id="2"><i class="layui-icon layui-icon-read"></i> 研究兴趣</li>
+        <li lay-id="3"><i class="layui-icon layui-icon-survey"></i> 教育与工作</li>
+        <li lay-id="4"><i class="layui-icon layui-icon-template-1"></i> 科研项目</li>
+        <li lay-id="5"><i class="layui-icon layui-icon-file-b"></i> 代表性成果</li>
+        <li lay-id="6"><i class="layui-icon layui-icon-star"></i> 学术服务</li>
+      </ul>
+
+      <div class="layui-tab-content">
+        <div class="layui-tab-item layui-show">
+          <div class="step-head">
+            <h2>网站设置</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/site.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-site" data-body="site"></div>
+        </div>
+
+        <div class="layui-tab-item">
+          <div class="step-head">
+            <h2>个人信息</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/profile.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-profile" data-body="profile"></div>
+        </div>
+
+        <div class="layui-tab-item">
+          <div class="step-head">
+            <h2>研究兴趣</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/research.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-research" data-body="research"></div>
+        </div>
+
+        <div class="layui-tab-item">
+          <div class="step-head">
+            <h2>教育与工作</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/experience.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-experience" data-body="experience"></div>
+        </div>
+
+        <div class="layui-tab-item">
+          <div class="step-head">
+            <h2>科研项目</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/projects.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-projects" data-body="projects"></div>
+        </div>
+
+        <div class="layui-tab-item">
+          <div class="step-head">
+            <h2>代表性成果</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/publications.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-publications" data-body="publications"></div>
+        </div>
+
+        <div class="layui-tab-item">
+          <div class="step-head">
+            <h2>学术服务</h2>
+            <p class="step-file"><span class="layui-badge layui-bg-gray">data/service.js</span></p>
+          </div>
+          <div class="layui-form" lay-filter="editor-service" data-body="service"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-pager">
+      <button type="button" class="layui-btn layui-btn-primary" data-action="prev-step">
+        <i class="layui-icon layui-icon-left"></i> 上一步
+      </button>
+      <span class="editor-progress">第 <b id="step-now">1</b> / <span id="step-total">7</span> 步</span>
+      <button type="button" class="layui-btn layui-btn-normal" data-action="save-step">
+        <i class="layui-icon layui-icon-ok"></i> 保存本步
+      </button>
+      <button type="button" class="layui-btn" data-action="next-step">
+        下一步 <i class="layui-icon layui-icon-right"></i>
+      </button>
+    </div>
+  </main>
+
+  <script src="layui/layui.js"></script>
+  <script src="data/site.js"></script>
+  <script src="data/profile.js"></script>
+  <script src="data/research.js"></script>
+  <script src="data/experience.js"></script>
+  <script src="data/projects.js"></script>
+  <script src="data/publications.js"></script>
+  <script src="data/service.js"></script>
+  <script src="assets/edit.js"></script>
+</body>
+</html>

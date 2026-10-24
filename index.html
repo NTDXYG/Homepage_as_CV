@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-lang="zh" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HomePage · CV</title>
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" type="image/png" href="assets/logo.svg">
+  <link rel="stylesheet" href="layui/css/layui.css">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('theme') ||
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+
+        var lang = localStorage.getItem('lang') || 'zh';
+        document.documentElement.dataset.lang = lang;
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="layui-container">
+      <div class="layui-row layui-col-space32 topbar-inner">
+        <div class="layui-col-xs12 layui-col-md3 topbar-quip">
+          <p class="quip" id="quip" hidden></p>
+        </div>
+        <div class="layui-col-xs12 layui-col-md9 topbar-main">
+          <div class="topbar-tools">
+            <nav class="content-nav" id="nav" data-i18n-label="nav.label" aria-label="Sections">
+              <a href="#research" data-i18n="nav.research">研究兴趣</a>
+              <a href="#experience" data-i18n="nav.experience">教育与工作经历</a>
+              <a href="#projects" data-i18n="nav.projects">科研项目</a>
+              <a href="#publications" data-i18n="nav.publications">代表性成果</a>
+              <a href="#service" data-i18n="nav.service">学术服务与荣誉</a>
+            </nav>
+
+            <div class="controls">
+              <span class="lang-select">
+                <select id="lang-toggle" data-i18n-label="lang.label" aria-label="Language">
+                  <option value="zh">中文</option>
+                  <option value="en">EN</option>
+                </select>
+                <svg class="lang-caret" viewBox="0 0 10 6" aria-hidden="true">
+                  <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+
+              <div class="theme-switch" role="group" data-i18n-label="theme.label" aria-label="Theme">
+                <span class="theme-switch-thumb" aria-hidden="true"></span>
+                <button class="theme-option" type="button" data-theme-value="light" aria-pressed="false"
+                  data-i18n="theme.light">Light</button>
+                <button class="theme-option" type="button" data-theme-value="dark" aria-pressed="false"
+                  data-i18n="theme.dark">Dark</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layui-container">
+    <div class="layui-row layui-col-space32 layout">
+      <aside class="layui-col-xs12 layui-col-md3 sidebar" id="sidebar" data-i18n-label="profile.label" aria-label="Profile"></aside>
+
+      <main id="main" class="layui-col-xs12 layui-col-md9 content">
+        <div id="content-body"></div>
+        <p class="load-error" id="load-error" hidden data-i18n="error.load">
+          无法加载 data/site.js。请确认它和本页在同一目录。
+        </p>
+      </main>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="layui-container">
+      <div class="footer-inner">
+        <p id="copyright"></p>
+        <p id="updated"></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="layui/layui.js"></script>
+  <script src="data/site.js"></script>
+  <script src="data/profile.js"></script>
+  <script src="data/research.js"></script>
+  <script src="data/experience.js"></script>
+  <script src="data/projects.js"></script>
+  <script src="data/publications.js"></script>
+  <script src="data/service.js"></script>
+  <script src="assets/script.js"></script>
+</body>
+</html>
