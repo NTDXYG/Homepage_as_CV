@@ -69,6 +69,20 @@ body.editor :focus-visible {
 
 .editor-actions .layui-btn + .layui-btn { margin-left: 0; }
 
+.editor-status {
+  max-width: 260px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.editor-status[data-state="dirty"],
+.editor-status[data-state="exported"] { color: #80521b; }
+
+.editor-status[data-state="saving"] { color: var(--link); }
+
+.editor-status[data-state="error"] { color: #8d3b3b; }
+
 .editor-main {
   width: min(1100px, calc(100% - 32px));
   margin: 0 auto;
@@ -120,13 +134,14 @@ body.editor :focus-visible {
 
 .step-file .layui-badge { margin-left: 4px; font-weight: 400; }
 
-.layui-form-item.field {
+.layui-form-item.field,
+.rank-pick {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
   column-gap: 12px;
-  align-items: start;
-  margin-bottom: 14px;
 }
+
+.layui-form-item.field { align-items: start; margin-bottom: 14px; }
 
 .layui-form-item.field > .layui-form-label {
   float: none;
@@ -271,12 +286,7 @@ body.editor .layui-form-radioed > div { color: var(--ink); }
   margin: 0 0 8px;
 }
 
-.rank-pick {
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  column-gap: 12px;
-  align-items: center;
-}
+.rank-pick { align-items: center; }
 
 .rank-pick-label {
   color: var(--muted);
@@ -430,7 +440,8 @@ body.editor .layui-elem-field legend {
 
   .editor-steps .layui-tab-content { padding: 16px 14px 20px; }
 
-  .layui-form-item.field { grid-template-columns: 1fr; }
+  .layui-form-item.field,
+  .rank-pick { grid-template-columns: 1fr; }
 
   .layui-form-item.field > .layui-form-label {
     padding: 0 0 6px;
@@ -440,8 +451,6 @@ body.editor .layui-elem-field legend {
   .layui-form-item.field > *:not(.layui-form-label) { grid-column: 1; }
 
   .pair-row { grid-template-columns: 1fr; gap: 6px; }
-
-  .rank-pick { grid-template-columns: 1fr; }
 
   .rank-pick-label { text-align: left; }
 

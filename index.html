@@ -3,15 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HomePage · CV</title>
+  <title>Guang Yang · 杨光</title>
+  <meta name="description" content="杨光，浙江大学博士后研究员，研究聚焦人工智能与软件工程的交叉，涵盖程序理解、生成与安全。">
+  <meta name="author" content="Guang Yang · 杨光">
+  <meta property="og:type" content="profile">
+  <meta property="og:title" content="Guang Yang · 杨光">
+  <meta property="og:description" content="浙江大学博士后研究员，研究方向包括程序理解、生成与安全。">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Guang Yang · 杨光">
+  <meta name="twitter:description" content="浙江大学博士后研究员，研究方向包括程序理解、生成与安全。">
   <meta name="theme-color" content="#ffffff">
-  <link rel="icon" type="image/png" href="assets/logo.svg">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
   <link rel="stylesheet" href="layui/css/layui.css">
   <link rel="stylesheet" href="assets/style.css">
   <script>
     (function () {
       try {
-        var theme = localStorage.getItem('theme') ||
+        var savedTheme = localStorage.getItem('theme');
+        var theme = ['light', 'dark', 'eye'].indexOf(savedTheme) !== -1 ? savedTheme :
           (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.dataset.theme = theme;
 
@@ -57,6 +66,8 @@
                   data-i18n="theme.light">Light</button>
                 <button class="theme-option" type="button" data-theme-value="dark" aria-pressed="false"
                   data-i18n="theme.dark">Dark</button>
+                <button class="theme-option" type="button" data-theme-value="eye" aria-pressed="false"
+                  data-i18n="theme.eye">护眼</button>
               </div>
             </div>
           </div>
@@ -86,6 +97,10 @@
       </div>
     </div>
   </footer>
+
+  <button type="button" class="back-to-top" id="back-to-top" hidden data-i18n-label="navigation.top" aria-label="回到顶部">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 13 6-6 6 6M12 7v12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
 
   <script src="layui/layui.js"></script>
   <script src="data/site.js"></script>

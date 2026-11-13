@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">Homepage CV 使用流程与操作位置示意</title>
+  <desc id="desc">解压项目，打开编辑页，完成六步填写，保存到本地，打开主页切换语言和分区，导出 PDF 或上传 GitHub。保存可能直接写入 data，也可能下载需要手动覆盖的 data.zip。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#64748b" stroke-width="1.4"/></marker>
+    <style>text{font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;fill:#172b4d}.title{font-size:28px;font-weight:700}.heading{font-size:21px;font-weight:700}.body{font-size:17px}.small{font-size:15px;fill:#526581}.label{font-size:16px;fill:#ffffff;font-weight:700}.line{fill:none;stroke:#64748b;stroke-width:2;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1200" height="820" rx="20" fill="#f3f6fb"/>
+  <text x="40" y="52" class="title">一份数据，维护主页与中英文简历</text>
+  <text x="40" y="82" class="small">操作位置示意图 · 非界面截图 · 具体布局以实际页面为准</text>
+  <rect x="40" y="110" width="245" height="88" rx="12" fill="#e4edff"/>
+  <text x="60" y="145" class="heading">① 获取完整项目</text><text x="60" y="175" class="body">解压后打开 edit.html</text>
+  <path d="M293 154H323" class="line"/>
+  <rect x="335" y="110" width="245" height="88" rx="12" fill="#e4edff"/>
+  <text x="355" y="145" class="heading">② 填写六个步骤</text><text x="355" y="175" class="body">中英文、头像、经历、成果</text>
+  <path d="M588 154H618" class="line"/>
+  <rect x="630" y="110" width="245" height="88" rx="12" fill="#e4edff"/>
+  <text x="650" y="145" class="heading">③ 保存本地数据</text><text x="650" y="175" class="body">写入 data 或覆盖 ZIP 文件</text>
+  <path d="M883 154H913" class="line"/>
+  <rect x="925" y="110" width="235" height="88" rx="12" fill="#d9f3ec"/>
+  <text x="945" y="145" class="heading">④ 预览与导出</text><text x="945" y="175" class="body">刷新 index.html</text>
+  <rect x="40" y="225" width="690" height="320" rx="14" fill="#fff" stroke="#ced9e8"/>
+  <text x="62" y="263" class="heading">编辑页 · edit.html</text>
+  <rect x="366" y="240" width="145" height="36" rx="7" fill="#edf2f9"/><text x="388" y="264" class="body">打开文件夹</text>
+  <rect x="531" y="240" width="176" height="36" rx="7" fill="#2563eb"/><text x="582" y="264" class="label">保存全部</text>
+  <path d="M62 291H708" stroke="#dde5ef"/>
+  <text x="62" y="321" class="body">网站设置　研究兴趣　教育与工作</text>
+  <text x="62" y="350" class="body">科研项目　代表性成果　学术服务</text>
+  <rect x="62" y="370" width="302" height="70" rx="8" fill="#f3f6fb"/><text x="78" y="398" class="small">中文</text><text x="78" y="424" class="body">填写姓名、单位与简介……</text>
+  <rect x="382" y="370" width="326" height="70" rx="8" fill="#f3f6fb"/><text x="398" y="398" class="small">English</text><text x="398" y="424" class="body">手动填写，或点击「生成英文」</text>
+  <text x="62" y="478" class="small">「下一步」切换章节；完成填写后请明确点击保存。</text>
+  <text x="62" y="510" class="small">「查看主页」打开预览，读取的是已经落盘的数据。</text>
+  <rect x="755" y="225" width="405" height="320" rx="14" fill="#fff" stroke="#ced9e8"/>
+  <text x="777" y="263" class="heading">保存时，认准这两个分支</text>
+  <rect x="777" y="286" width="361" height="94" rx="9" fill="#eaf6f2"/>
+  <text x="795" y="316" class="heading">出现文件夹选择窗口</text><text x="795" y="344" class="body">选择项目根目录或 data 目录</text><text x="795" y="367" class="small">允许写入后，文件直接保存到本地。</text>
+  <rect x="777" y="396" width="361" height="123" rx="9" fill="#fff4df"/>
+  <text x="795" y="428" class="heading">下载了 data.zip</text><text x="795" y="457" class="body">解压，将 data 内同名文件覆盖回去</text><text x="795" y="484" class="small">下载完成 ≠ 已更新项目文件。</text><text x="795" y="507" class="small">只保存本步时，保留其他章节的文件。</text>
+  <rect x="40" y="573" width="1120" height="207" rx="14" fill="#fff" stroke="#ced9e8"/>
+  <text x="62" y="611" class="heading">主页 · index.html</text>
+  <rect x="62" y="632" width="220" height="115" rx="9" fill="#edf2f9"/><text x="82" y="665" class="body">姓名 / 单位 / 联系方式</text><rect x="82" y="684" width="180" height="40" rx="7" fill="#2563eb"/><text x="137" y="710" class="label">简历 PDF</text>
+  <text x="315" y="656" class="body">1. 右上角选择「中文」或「EN」</text>
+  <text x="315" y="694" class="body">2. 代表性成果中选择分区体系与是否使用 CCF</text>
+  <text x="315" y="732" class="body">3. 点击「简历 PDF」，在打印窗口选择「另存为 PDF」</text>
+  <text x="40" y="805" class="small">发布网站：将本地文件上传 GitHub → Settings → Pages → main / (root) → 等待部署完成。</text>
+</svg>

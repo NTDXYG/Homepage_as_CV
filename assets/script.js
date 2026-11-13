@@ -7,7 +7,7 @@
   var UI = {
     zh: {
       lang: { label: '语言' },
-      theme: { label: '主题', light: '浅色', dark: '深色' },
+      theme: { label: '主题', light: '浅色', dark: '深色', eye: '护眼' },
       nav: {
         label: '章节',
         research: '研究兴趣',
@@ -16,17 +16,18 @@
         publications: '代表性成果',
         service: '学术服务与荣誉'
       },
-      profile: { label: '个人资料', metrics: '主要指标' },
+      profile: { label: '个人资料', metrics: '主要指标', cv: '简历 PDF', contact: '联系我', copy: '复制邮箱', copied: '已复制', copyFailed: '无法自动复制，请选中邮箱复制' },
+      navigation: { top: '回到顶部' },
       error: { load: '无法加载 data/site.js。请确认它和本页在同一目录。' },
       ccf: { label: '是否使用 CCF', on: '使用 CCF', off: '不使用 CCF' },
       rank: { label: '分区体系', print: '分区体系：{name}' },
-      pub: { count: '{label} {n} 篇', countPlural: '{label} {n} 篇', sep: '；' },
+      pub: { count: '{label} {n} 篇', countPlural: '{label} {n} 篇', sep: '；', results: '共 {n} 篇', scholar: 'Google Scholar', dblp: 'DBLP', lookup: '搜索论文：{title}（{provider}，新窗口）' },
       print: { cv: 'CV', noCcf: ' · 不使用CCF' },
       footer: { updated: '最近更新：{date}' }
     },
     en: {
       lang: { label: 'Language' },
-      theme: { label: 'Theme', light: 'Light', dark: 'Dark' },
+      theme: { label: 'Theme', light: 'Light', dark: 'Dark', eye: 'Reading' },
       nav: {
         label: 'Sections',
         research: 'Research',
@@ -35,11 +36,12 @@
         publications: 'Publications',
         service: 'Service'
       },
-      profile: { label: 'Profile', metrics: 'Metrics' },
+      profile: { label: 'Profile', metrics: 'Metrics', cv: 'CV · PDF', contact: 'Contact me', copy: 'Copy email', copied: 'Copied', copyFailed: 'Select the email address to copy it manually' },
+      navigation: { top: 'Back to top' },
       error: { load: 'Cannot load data/site.js. Make sure it sits next to this page.' },
       ccf: { label: 'Use CCF', on: 'Use CCF', off: 'Do not use CCF' },
       rank: { label: 'Ranking system', print: 'Ranking: {name}' },
-      pub: { count: '{label} · {n} paper', countPlural: '{label} · {n} papers', sep: '; ' },
+      pub: { count: '{label} · {n} paper', countPlural: '{label} · {n} papers', sep: '; ', results: '{n} publications', scholar: 'Google Scholar', dblp: 'DBLP', lookup: 'Search for {title} ({provider}, new window)' },
       print: { cv: 'CV', noCcf: ' · no CCF' },
       footer: { updated: 'Last updated: {date}' }
     }
@@ -51,6 +53,7 @@
     orcid: '<circle cx="12" cy="12" r="9"/><path d="M9.2 8.6v7"/><circle cx="9.2" cy="6.9" r=".7" fill="currentColor" stroke="none"/><path d="M12.4 8.6h2.3a3.5 3.5 0 0 1 0 7h-2.3v-7Z"/>',
     cv: '<path d="M13.5 3H6.8A1.8 1.8 0 0 0 5 4.8v14.4A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.8-1.8V8.5L13.5 3Z"/><path d="M13.5 3v5.5H19"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+    copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3"/>',
     mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="m4.5 7 7.5 5.5L19.5 7"/>'
   };
 
@@ -71,9 +74,10 @@
     return node;
   }
 
-  layui.use(['i18n'], function () {
+  layui.use(['i18n', 'layer'], function () {
     var $ = layui.$;
     var i18n = layui.i18n;
+    var layer = layui.layer;
 
     var messages = i18n.config.messages || (i18n.config.messages = {});
     (messages['zh-CN'] = messages['zh-CN'] || {}).ui = UI.zh;
@@ -106,16 +110,55 @@
     var langSelect = document.getElementById('lang-toggle');
     var themeMeta = document.querySelector('meta[name="theme-color"]');
     var themeButtons = document.querySelectorAll('.theme-option');
+    var topbar = document.querySelector('.topbar');
+    var backToTop = document.getElementById('back-to-top');
+
+    function syncHeaderHeight() {
+      root.style.setProperty('--header-height', topbar.getBoundingClientRect().height + 'px');
+    }
+
+    function readingPosition() {
+      if (!state.data || window.scrollY < 90) return { top: window.scrollY };
+      var limit = topbar.getBoundingClientRect().height + 20;
+      var candidates = contentEl.querySelectorAll('.section, [data-reading-key]');
+      var anchor = candidates[0];
+      Array.prototype.forEach.call(candidates, function (node) {
+        if (node.getBoundingClientRect().top <= limit) anchor = node;
+      });
+      return anchor ? { id: anchor.id, key: anchor.getAttribute('data-reading-key'), offset: anchor.getBoundingClientRect().top - limit } : { top: window.scrollY };
+    }
+
+    function restoreReading(position) {
+      syncHeaderHeight();
+      var anchor = position.id ? document.getElementById(position.id) : null;
+      if (position.key) {
+        Array.prototype.some.call(contentEl.querySelectorAll('[data-reading-key]'), function (node) {
+          if (node.getAttribute('data-reading-key') !== position.key) return false;
+          anchor = node;
+          return true;
+        });
+      }
+      var target = anchor ? window.scrollY + anchor.getBoundingClientRect().top - topbar.getBoundingClientRect().height - 20 - position.offset : position.top;
+      window.scrollTo({ top: Math.max(0, target || 0), behavior: 'instant' });
+      updateActive();
+    }
+
+    if (window.ResizeObserver) new ResizeObserver(function () { syncHeaderHeight(); updateActive(); }).observe(topbar);
+    window.addEventListener('resize', syncHeaderHeight);
+    syncHeaderHeight();
+    if (backToTop) backToTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    });
 
     function setTheme(theme) {
-      var next = theme === 'dark' ? 'dark' : 'light';
+      var next = ['light', 'dark', 'eye'].indexOf(theme) !== -1 ? theme : 'light';
       root.dataset.theme = next;
       store('theme', next);
 
       Array.prototype.forEach.call(themeButtons, function (button) {
         button.setAttribute('aria-pressed', String(button.dataset.themeValue === next));
       });
-      if (themeMeta) themeMeta.setAttribute('content', next === 'dark' ? '#0f1113' : '#ffffff');
+      if (themeMeta) themeMeta.setAttribute('content', getComputedStyle(root).getPropertyValue('--paper').trim());
     }
 
     Array.prototype.forEach.call(themeButtons, function (button) {
@@ -136,6 +179,7 @@
     }
 
     function setLang(lang, persist) {
+      var position = readingPosition();
       state.lang = lang === 'en' ? 'en' : 'zh';
       root.dataset.lang = state.lang;
       root.lang = state.lang === 'zh' ? 'zh-CN' : 'en';
@@ -146,6 +190,7 @@
       fillStaticText();
       paintQuip();
       render();
+      restoreReading(position);
     }
 
     if (langSelect) {
@@ -205,12 +250,19 @@
         contacts.appendChild(item);
       });
 
-      var printItem = el('li');
-      var printBtn = el('button', { class: 'cv-print', type: 'button', 'aria-label': 'CV (PDF)' });
+      var actions = el('div', { class: 'profile-actions' });
+      var printBtn = el('button', { class: 'profile-action action-primary cv-print', type: 'button' });
       printBtn.addEventListener('click', function () { window.print(); });
-      printBtn.innerHTML = icon('cv') + '<span>CV (PDF)</span>';
-      printItem.appendChild(printBtn);
-      contacts.appendChild(printItem);
+      printBtn.innerHTML = icon('cv');
+      printBtn.appendChild(el('span', { text: $t('profile.cv') }));
+      actions.appendChild(printBtn);
+      if (p.collaboration && p.collaboration.email) {
+        var contactBtn = el('a', { class: 'profile-action action-secondary', href: 'mailto:' + p.collaboration.email });
+        contactBtn.innerHTML = icon('mail');
+        contactBtn.appendChild(el('span', { text: $t('profile.contact') }));
+        actions.appendChild(contactBtn);
+      }
+      main.appendChild(actions);
       main.appendChild(contacts);
 
       if (p.collaboration) {
@@ -220,7 +272,37 @@
         var mail = el('a', { class: 'card-link', href: 'mailto:' + p.collaboration.email });
         mail.innerHTML = icon('mail') + '<span></span>';
         mail.querySelector('span').textContent = p.collaboration.email;
-        card.appendChild(mail);
+        var emailRow = el('div', { class: 'email-row' });
+        emailRow.appendChild(mail);
+        if (p.collaboration.email) {
+          var copyButton = el('button', { class: 'email-copy', type: 'button', 'aria-label': $t('profile.copy'), title: $t('profile.copy'), html: icon('copy') });
+          var feedback = el('span', { class: 'copy-feedback', role: 'status', 'aria-live': 'polite' });
+          var feedbackTimer;
+          copyButton.addEventListener('click', function () {
+            clearTimeout(feedbackTimer);
+            feedback.textContent = '';
+            copyButton.disabled = true;
+            var copying = navigator.clipboard && navigator.clipboard.writeText
+              ? navigator.clipboard.writeText(p.collaboration.email)
+              : Promise.reject(new Error('Clipboard unavailable'));
+            copying.then(function () {
+              layer.msg($t('profile.copied'), { time: 500 });
+            }).catch(function () {
+              var selection = window.getSelection();
+              var range = document.createRange();
+              range.selectNodeContents(mail.querySelector('span'));
+              selection.removeAllRanges();
+              selection.addRange(range);
+              feedback.textContent = $t('profile.copyFailed');
+            }).then(function () {
+              copyButton.disabled = false;
+              feedbackTimer = setTimeout(function () { feedback.textContent = ''; }, 4000);
+            });
+          });
+          emailRow.appendChild(copyButton);
+          card.appendChild(emailRow);
+          card.appendChild(feedback);
+        } else card.appendChild(emailRow);
         main.appendChild(card);
       }
 
@@ -265,18 +347,15 @@
     }
 
     function byTime(a, b) {
-      var startA = timeValue(a.date, 0);
-      var startB = timeValue(b.date, 0);
-      if (startA == null && startB == null) return 0;
-      if (startA == null) return 1;
-      if (startB == null) return -1;
-      if (startA !== startB) return startB - startA;
-      var endA = timeValue(a.date, 1);
-      var endB = timeValue(b.date, 1);
-      if (endA == null && endB == null) return 0;
-      if (endA == null) return 1;
-      if (endB == null) return -1;
-      return endB - endA;
+      for (var part = 0; part < 2; part++) {
+        var valueA = timeValue(a.date, part);
+        var valueB = timeValue(b.date, part);
+        if (valueA == null && valueB == null) return 0;
+        if (valueA == null) return 1;
+        if (valueB == null) return -1;
+        if (valueA !== valueB) return valueB - valueA;
+      }
+      return 0;
     }
 
     function renderTimeline(section) {
@@ -628,10 +707,27 @@
       var list = el('ol', { class: 'pubs' });
 
       sortItems(section, items).forEach(function (item) {
-        var entry = el('li');
+        var entry = el('li', { 'data-reading-key': 'pub:' + item.title });
         entry.appendChild(el('p', { class: 'pub-title', text: item.title }));
         entry.appendChild(el('p', { class: 'pub-authors', html: renderAuthors(section, item) }));
-        entry.appendChild(el('p', { class: 'pub-venue', text: item.venue }));
+        var venue = el('p', { class: 'pub-venue' });
+        venue.appendChild(el('span', { class: 'pub-venue-text', text: item.venue }));
+        var lookups = el('span', { class: 'pub-lookups' });
+        [
+          { key: 'scholar', url: 'https://scholar.google.com/scholar?q=' },
+          { key: 'dblp', url: 'https://dblp.org/search?q=' }
+        ].forEach(function (provider) {
+          var lookup = el('a', {
+            href: provider.url + encodeURIComponent(item.title || ''),
+            target: '_blank', rel: 'noopener noreferrer',
+            'aria-label': $t('pub.lookup', { title: item.title, provider: $t('pub.' + provider.key) })
+          });
+          lookup.appendChild(el('span', { class: provider.key === 'scholar' ? 'lookup-full' : '', text: $t('pub.' + provider.key) + ' ↗' }));
+          if (provider.key === 'scholar') lookup.appendChild(el('span', { class: 'lookup-short', 'aria-hidden': 'true', text: 'Scholar ↗' }));
+          lookups.appendChild(lookup);
+        });
+        venue.appendChild(lookups);
+        entry.appendChild(venue);
         list.appendChild(entry);
       });
 
@@ -669,11 +765,7 @@
       resolveRank(section);
       resolveCcf(section);
 
-      var buckets = { 1: [], 2: [] };
-      (section.items || []).forEach(function (item) {
-        var bucket = itemBucket(item);
-        if (bucket) buckets[bucket].push(item);
-      });
+      var buckets = publicationBuckets(section);
 
       var bar = el('div', { class: 'pub-bar' });
       var note = el('p', { class: 'note', html: T(section.note) });
@@ -699,21 +791,30 @@
       bar.appendChild(switches);
 
       body.appendChild(bar);
-
+      body.appendChild(el('p', {
+        class: 'pub-result-count', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true',
+        text: $t('pub.results', { n: buckets[1].length + buckets[2].length })
+      }));
+      var results = el('div', { class: 'pub-results' });
+      body.appendChild(results);
       bucketKeys(buckets).forEach(function (bucket) {
         if (!buckets[bucket].length) return;
-
         var heading = el('h3', { class: 'group' });
         heading.appendChild(document.createTextNode(bucketLabel(section, bucket)));
-        heading.appendChild(el('span', {
-          class: 'print-only',
-          text: ' · ' + buckets[bucket].length + (state.lang === 'zh' ? ' 篇' : (buckets[bucket].length === 1 ? ' paper' : ' papers'))
-        }));
-        body.appendChild(heading);
-        body.appendChild(pubList(section, buckets[bucket]));
+        heading.appendChild(el('span', { class: 'group-count', text: ' · ' + buckets[bucket].length }));
+        results.appendChild(heading);
+        results.appendChild(pubList(section, buckets[bucket]));
       });
-
       return body;
+    }
+
+    function publicationBuckets(section) {
+      var buckets = { 1: [], 2: [] };
+      (section.items || []).forEach(function (item) {
+        var bucket = itemBucket(item);
+        if (bucket) buckets[bucket].push(item);
+      });
+      return buckets;
     }
 
     function renderService(section) {
@@ -761,10 +862,14 @@
     }
 
     function updatedLine() {
-      var now = new Date();
-      var year = now.getFullYear();
-      var month = now.getMonth();
-      var day = now.getDate();
+      var raw = state.data.site && state.data.site.updatedAt;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw || '')) return '';
+      var parts = raw.split('-').map(Number);
+      var year = parts[0];
+      var month = parts[1] - 1;
+      var day = parts[2];
+      var check = new Date(Date.UTC(year, month, day));
+      if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month || check.getUTCDate() !== day) return '';
       var date = state.lang === 'zh'
         ? year + ' 年 ' + (month + 1) + ' 月 ' + day + ' 日'
         : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month] + ' ' + day + ', ' + year;
@@ -774,7 +879,10 @@
     function renderFooter() {
       var year = String(new Date().getFullYear());
       if (copyrightEl) copyrightEl.textContent = '© ' + year + ' HomePage · CV';
-      if (updatedEl) updatedEl.textContent = updatedLine();
+      if (updatedEl) {
+        updatedEl.textContent = updatedLine();
+        updatedEl.hidden = !updatedEl.textContent;
+      }
     }
 
     function applyHead() {
@@ -793,6 +901,14 @@
 
       var author = document.querySelector('meta[name="author"]');
       if (author && (en || zh)) author.setAttribute('content', en || zh);
+      ['og:title', 'twitter:title'].forEach(function (key) {
+        var meta = document.querySelector('meta[property="' + key + '"], meta[name="' + key + '"]');
+        if (meta) meta.setAttribute('content', document.title);
+      });
+      ['og:description', 'twitter:description'].forEach(function (key) {
+        var meta = document.querySelector('meta[property="' + key + '"], meta[name="' + key + '"]');
+        if (meta) meta.setAttribute('content', T(state.data.intro));
+      });
     }
 
     function render() {
@@ -831,6 +947,7 @@
     window.setInterval(tickClock, 30000);
 
     function updateActive() {
+      if (backToTop) backToTop.hidden = window.scrollY < 500;
       var links = Array.prototype.slice.call(navEl.querySelectorAll('a'));
       var sections = links
         .map(function (link) { return document.getElementById(link.getAttribute('href').slice(1)); })
@@ -839,13 +956,14 @@
       if (!sections.length) return;
 
       if (window.scrollY < 90) {
-        links.forEach(function (link) { link.classList.remove('active'); });
+        links.forEach(function (link) { link.classList.remove('active'); link.removeAttribute('aria-current'); });
         return;
       }
 
       var current = sections[0];
+      var threshold = topbar.getBoundingClientRect().height + 32;
       sections.forEach(function (section) {
-        if (section.getBoundingClientRect().top <= 140) current = section;
+        if (section.getBoundingClientRect().top <= threshold) current = section;
       });
 
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8) {
@@ -853,7 +971,18 @@
       }
 
       links.forEach(function (link) {
-        link.classList.toggle('active', link.getAttribute('href') === '#' + current.id);
+        var active = link.getAttribute('href') === '#' + current.id;
+        var changed = active && !link.classList.contains('active');
+        link.classList.toggle('active', active);
+        if (changed && navEl.scrollWidth > navEl.clientWidth) {
+          var navRect = navEl.getBoundingClientRect();
+          var linkRect = link.getBoundingClientRect();
+          if (linkRect.left < navRect.left || linkRect.right > navRect.right) {
+            navEl.scrollTo({ left: navEl.scrollLeft + linkRect.left - navRect.left - (navRect.width - linkRect.width) / 2, behavior: 'instant' });
+          }
+        }
+        if (active) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
       });
     }
 

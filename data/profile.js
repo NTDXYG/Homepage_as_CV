@@ -22,7 +22,7 @@ window.HOMEPAGE.files["data/profile.js"] = {
       }
     },
     {
-      "value": "900+",
+      "value": "1000+",
       "label": {
         "zh": "引用",
         "en": "Citations"

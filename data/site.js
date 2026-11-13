@@ -3,6 +3,7 @@ window.HOMEPAGE.files["data/site.js"] = {
   "site": {
     "title": "Guang Yang · 杨光",
     "defaultLang": "zh",
+    "updatedAt": "",
     "quip": true
   },
   "profile": "data/profile.js",

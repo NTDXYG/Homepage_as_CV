@@ -15,11 +15,10 @@
     service: "data/service.js"
   };
 
-  var ORDER = ["site", "profile", "research", "experience", "projects", "publications", "service"];
+  var ORDER = Object.keys(PATHS);
 
   var STEPS = [
-    { files: ["site"] },
-    { files: ["profile"] },
+    { files: ["site", "profile"] },
     { files: ["research"] },
     { files: ["experience"] },
     { files: ["projects"] },
@@ -30,12 +29,15 @@
   var stepIndex = 0;
   var state = {};
   var meta = { missing: {}, bad: {}, dataDir: null };
+  var dirty = {};
+  var saving = false;
 
   var TEMPLATES = {
     site: {
       site: {
         title: "",
         defaultLang: "zh",
+        updatedAt: "",
         quip: true
       },
       profile: "data/profile.js",
@@ -255,12 +257,8 @@
     return box;
   }
 
-  function cardBody(attrs, className) {
-    var wrap = el("div", { class: "layui-card" + (className ? " " + className : "") });
-    Object.keys(attrs || {}).forEach(function (key) {
-      wrap.setAttribute(key, attrs[key]);
-    });
-    return wrap;
+  function cardBody(className) {
+    return el("div", { class: "layui-card" + (className ? " " + className : "") });
   }
 
   function toast(text) {
@@ -268,7 +266,32 @@
   }
 
   function saved(detail) {
+    if (!hasDirty()) setEditorStatus(detail ? "exported" : "saved", detail || "已保存");
     layer.msg(detail ? "保存成功。" + detail : "保存成功", { icon: 1, time: 2200 });
+  }
+
+  function setEditorStatus(stateName, text) {
+    var status = document.getElementById("editor-status");
+    if (!status) return;
+    status.setAttribute("data-state", stateName);
+    status.textContent = text;
+  }
+
+  function markDirty(key) {
+    dirty[key] = true;
+    if (!saving) setEditorStatus("dirty", "有未保存修改");
+  }
+
+  function clearDirty(files) {
+    ORDER.forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(files, PATHS[key]) &&
+          JSON.stringify(state[key]) === JSON.stringify(files[PATHS[key]])) delete dirty[key];
+    });
+    setEditorStatus(hasDirty() ? "dirty" : "saved", hasDirty() ? "有未保存修改" : "已保存");
+  }
+
+  function hasDirty() {
+    return Object.keys(dirty).length > 0;
   }
 
   function openSaveMask() {
@@ -328,6 +351,13 @@
 
   function renderAll() {
     ORDER.forEach(renderInto);
+    var errors = Object.keys(meta.bad).map(function (key) { return meta.bad[key]; });
+    var banner = document.getElementById("banner");
+    banner.hidden = !errors.length;
+    if (errors.length) {
+      banner.textContent = errors.join("；") + "。对应文件已禁止保存，请修复文件后重新打开文件夹。";
+      setEditorStatus("error", "部分文件读取失败，已保护原文件");
+    }
   }
 
   function renderSite() {
@@ -338,6 +368,10 @@
     if (typeof site.site.title !== "string") site.site.title = "";
 
     root.appendChild(plain("页面标题", "site.site.title", "Guang Yang · 杨光"));
+    var updated = plain("内容更新日期", "site.site.updatedAt", "YYYY-MM-DD");
+    updated.querySelector("input").type = "date";
+    root.appendChild(updated);
+    root.appendChild(hint("填写实际内容更新日期；留空时，主页不显示最近更新。"));
 
     var lang = field("默认语言");
     var langSelect = el("select", { "data-bind": "site.site.defaultLang", "lay-filter": "field" });
@@ -506,18 +540,15 @@
   function sortByTime(items) {
     if (!items || !items.sort) return items;
     items.sort(function (a, b) {
-      var startA = timeValue(a.date, 0);
-      var startB = timeValue(b.date, 0);
-      if (startA == null && startB == null) return 0;
-      if (startA == null) return 1;
-      if (startB == null) return -1;
-      if (startA !== startB) return startB - startA;
-      var endA = timeValue(a.date, 1);
-      var endB = timeValue(b.date, 1);
-      if (endA == null && endB == null) return 0;
-      if (endA == null) return 1;
-      if (endB == null) return -1;
-      return endB - endA;
+      for (var part = 0; part < 2; part++) {
+        var valueA = timeValue(a.date, part);
+        var valueB = timeValue(b.date, part);
+        if (valueA == null && valueB == null) return 0;
+        if (valueA == null) return 1;
+        if (valueB == null) return -1;
+        if (valueA !== valueB) return valueB - valueA;
+      }
+      return 0;
     });
     return items;
   }
@@ -695,7 +726,7 @@
 
   function paperCard(item, list, index) {
     var base = list + "." + index;
-    var card = cardBody(null, "paper");
+    var card = cardBody("paper");
     card.appendChild(plain("标题", base + ".title"));
     card.appendChild(plain("作者", base + ".authors", "Yang G, Zhou Y, et al."));
     card.appendChild(plain("出处", base + ".venue"));
@@ -747,8 +778,6 @@
   };
 
   function fileOf(list) {
-    if (list.indexOf("publications.") === 0) return "publications";
-    if (list.indexOf("service.") === 0) return "service";
     return list.split(".")[0];
   }
 
@@ -760,12 +789,14 @@
 
     if (kind === "quip-mode") {
       state.site.site.quip = input.value === "on";
+      markDirty("site");
       return;
     }
     if (kind === "self") {
       state.publications.self = input.value.split(/[,，]/).map(function (name) {
         return name.trim();
       }).filter(Boolean);
+      markDirty("publications");
       return;
     }
     if (kind === "rank") {
@@ -776,13 +807,16 @@
       if (key === "ccf") {
         if (raw === "1" || raw === "2") paper.ccf = Number(raw);
         else delete paper.ccf;
+        markDirty("publications");
         return;
       }
       setItemRank(paper, key, raw === "1" || raw === "2" ? raw : "");
+      markDirty("publications");
       return;
     }
     if (bind) {
       setPath(state, bind, input.value);
+      markDirty(fileOf(bind));
       if (bind.indexOf(".advisor.") !== -1) refreshAdvisorHint(input);
       if (event.type === "change" && /\.date$/.test(bind)) {
         if (bind.indexOf("experience.items.") === 0) renderInto("experience");
@@ -807,6 +841,7 @@
     var item = arr[index];
     arr[index] = arr[next];
     arr[next] = item;
+    markDirty(fileOf(list));
     renderInto(fileOf(list));
   }
 
@@ -848,6 +883,7 @@
       var arr = getPath(state, list);
       if (!arr || typeof arr.push !== "function") return;
       arr.push(blankFor(list));
+      markDirty(fileOf(list));
       renderInto(fileOf(list));
       var root = document.querySelector('[data-list-root="' + list + '"]');
       var cards = root ? root.querySelectorAll(":scope > .layui-card") : [];
@@ -858,6 +894,7 @@
     }
     if (action === "remove") {
       getPath(state, list).splice(index, 1);
+      markDirty(fileOf(list));
       renderInto(fileOf(list));
       return;
     }
@@ -948,6 +985,7 @@
 
     requestTranslate(zh).then(function (text) {
       setPath(state, enPath, text);
+      markDirty(fileOf(enPath));
       var input = findBind(enPath);
       if (input) input.value = text;
       toast("已填入英文，可以再改");
@@ -981,7 +1019,7 @@
     var files = {};
     keys.forEach(function (key) {
       if (meta.bad[key] || !state[key]) return;
-      files[PATHS[key]] = state[key];
+      files[PATHS[key]] = clone(state[key]);
     });
     return files;
   }
@@ -1004,54 +1042,91 @@
       + JSON.stringify(data, null, 2) + ";\n";
   }
 
-  function findSiteFile(dir) {
-    return dir.getFileHandle("site.js").catch(function () {
-      return dir.getFileHandle("site.json");
-    });
-  }
-
   function openNamed(dir, name) {
-    return dir.getFileHandle(name).catch(function () {
-      if (name.slice(-3) === ".js") return dir.getFileHandle(name.slice(0, -3) + ".json");
-      throw new Error("missing");
+    return dir.getFileHandle(name).catch(function (error) {
+      if (error.name === "NotFoundError" && name.slice(-3) === ".js") {
+        return dir.getFileHandle(name.slice(0, -3) + ".json");
+      }
+      throw error;
     });
   }
 
   function locateDataDir(root) {
-    return findSiteFile(root).then(function () {
+    return openNamed(root, "site.js").then(function () {
       meta.dataDir = root;
-    }).catch(function () {
+    }).catch(function (error) {
+      if (error.name !== "NotFoundError") throw error;
       return root.getDirectoryHandle("data").then(function (dir) {
-        return findSiteFile(dir).then(function () {
+        return openNamed(dir, "site.js").then(function () {
           meta.dataDir = dir;
         });
       });
     });
   }
 
-  function readDataDir(dir) {
-    return Promise.all(ORDER.map(function (key) {
-      var name = PATHS[key].split("/").pop();
-      return openNamed(dir, name).then(function (handle) {
-        return handle.getFile().then(readText);
-      }).then(function (text) {
-        state[key] = parseDataFile(text);
-        delete meta.missing[key];
-        delete meta.bad[key];
-      }).catch(function () {
-        state[key] = clone(TEMPLATES[key]);
-        meta.missing[key] = true;
-        delete meta.bad[key];
-      });
-    })).then(function () {
-      meta.fetchFailed = false;
-      document.getElementById("banner").hidden = true;
-      renderAll();
-      toast("已从文件夹载入");
+  function validateData(key, data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("数据必须是对象");
+    var lists = key === "site" ? ["sections"] : key === "profile" ? ["metrics", "contacts"] :
+      key === "service" ? ["columns"] : ["items"];
+    lists.forEach(function (name) {
+      if (data[name] != null && !Array.isArray(data[name])) throw new Error(name + " 必须是数组");
     });
+    return data;
   }
 
-  function openFolder() {
+  function acceptData(key, data) {
+    state[key] = validateData(key, data);
+    delete meta.missing[key];
+    delete meta.bad[key];
+    delete dirty[key];
+  }
+
+  function rejectData(key, error) {
+    meta.bad[key] = PATHS[key] + (error instanceof SyntaxError ? " 格式错误" : " 读取或数据校验失败");
+    delete meta.missing[key];
+  }
+
+  function loadedFolder() {
+    renderAll();
+    if (Object.keys(meta.bad).length) {
+      setEditorStatus("error", "部分文件读取失败，已保护原文件");
+      toast("部分文件读取失败，请查看页面提示");
+    } else {
+      setEditorStatus(hasDirty() ? "dirty" : "saved", hasDirty() ? "有未保存修改" : "已从文件夹载入");
+      toast("已从文件夹载入");
+    }
+  }
+
+  function readDataDir(dir) {
+    return Promise.all(ORDER.map(function (key) {
+      var opened = false;
+      var name = PATHS[key].split("/").pop();
+      return openNamed(dir, name).then(function (handle) {
+        opened = true;
+        return handle.getFile().then(readText);
+      }).then(function (text) {
+        acceptData(key, parseDataFile(text));
+      }).catch(function (error) {
+        // Only a missing handle permits a new template; unreadable existing files stay protected.
+        if (!opened && error.name === "NotFoundError") {
+          state[key] = clone(TEMPLATES[key]);
+          meta.missing[key] = true;
+          delete meta.bad[key];
+          delete dirty[key];
+        } else rejectData(key, error);
+      });
+    })).then(loadedFolder);
+  }
+
+  function openFolder(confirmed) {
+    if (saving) return;
+    if (hasDirty() && confirmed !== true) {
+      layer.confirm("有未保存修改，重新载入文件夹会替换当前内容。继续？", { icon: 3, title: "重新载入" }, function (id) {
+        layer.close(id);
+        openFolder(true);
+      });
+      return;
+    }
     if (window.showDirectoryPicker && window.isSecureContext) {
       showDirectoryPicker({ mode: "readwrite", id: "homepage-cv" }).then(function (root) {
         return locateDataDir(root).then(function () {
@@ -1059,7 +1134,7 @@
         });
       }).catch(function (error) {
         if (error && error.name === "AbortError") return;
-        toast("这个目录里没有 data/site.js");
+        toast("无法打开数据目录，请确认包含 data/site.js 且已授予读取权限");
       });
       return;
     }
@@ -1078,28 +1153,23 @@
       var key = byName[file.name];
       if (!key) return;
       jobs.push(readText(file).then(function (text) {
-        state[key] = parseDataFile(text);
-        delete meta.missing[key];
-        delete meta.bad[key];
+        acceptData(key, parseDataFile(text));
+      }).catch(function (error) {
+        rejectData(key, error);
       }));
     });
     if (!jobs.length) {
       toast("没有找到 data 里的数据文件");
       return;
     }
-    Promise.all(jobs).then(function () {
-      meta.fetchFailed = false;
-      document.getElementById("banner").hidden = true;
-      renderAll();
-      toast("已从文件夹载入");
-    }).catch(function () {
-      toast("有数据文件无法解析");
-    });
+    meta.dataDir = null;
+    Promise.all(jobs).then(loadedFolder);
   }
 
   function writeDataDir(files) {
-    var names = Object.keys(files);
-    return Promise.all(names.map(function (rel) {
+    var written = {};
+    var failed = [];
+    return Promise.all(Object.keys(files).map(function (rel) {
       var name = rel.split("/").pop();
       return meta.dataDir.getFileHandle(name, { create: true }).then(function (handle) {
         return handle.createWritable().then(function (writable) {
@@ -1107,17 +1177,28 @@
             return writable.close();
           });
         });
-      });
-    })).then(function () {
-      names.forEach(function (rel) {
+      }).then(function () {
+        written[rel] = files[rel];
         ORDER.forEach(function (key) {
           if (PATHS[key] === rel) delete meta.missing[key];
         });
+      }).catch(function () {
+        failed.push(rel);
       });
+    })).then(function () {
+      clearDirty(written);
+      if (failed.length) throw new Error("未写入：" + failed.join("、"));
     });
   }
 
   function saveFiles(keys) {
+    if (saving) return;
+    var blocked = keys.filter(function (key) { return !!meta.bad[key]; });
+    if (blocked.length) {
+      setEditorStatus("error", "存在读取失败的文件，未执行保存");
+      toast("请先修复并重新载入：" + blocked.map(function (key) { return PATHS[key]; }).join("、"));
+      return;
+    }
     if (keys.indexOf("profile") !== -1 && !profileEmailOk()) return;
     var files = collectFiles(keys);
     var names = Object.keys(files);
@@ -1126,38 +1207,49 @@
       return;
     }
     var mask = openSaveMask();
+    saving = true;
+    setEditorStatus("saving", "保存中");
     setTimeout(function () { runSave(files, mask); }, 16);
   }
 
-  function finishSave(mask, detail) {
+  function finishSave(mask, detail, files) {
     closeSaveMask(mask);
+    saving = false;
+    clearDirty(files);
     saved(detail);
+  }
+
+  function failSave(mask, error) {
+    closeSaveMask(mask);
+    saving = false;
+    setEditorStatus("error", error.message);
+    toast(error.message + "。请检查文件夹权限后重试");
   }
 
   function runSave(files, mask) {
     if (meta.dataDir) {
       writeDataDir(files).then(function () {
-        finishSave(mask);
-      }).catch(function () {
-        closeSaveMask(mask);
-        toast("写入失败");
+        finishSave(mask, null, files);
+      }).catch(function (error) {
+        failSave(mask, error);
       });
       return;
     }
     if (window.showDirectoryPicker && window.isSecureContext) {
       showDirectoryPicker({ mode: "readwrite", id: "homepage-cv" }).then(function (root) {
-        return locateDataDir(root).catch(function () {
+        return locateDataDir(root).catch(function (error) {
+          if (error.name !== "NotFoundError") throw error;
           return root.getDirectoryHandle("data", { create: true }).then(function (dir) {
             meta.dataDir = dir;
           });
         });
       }).then(function () {
-        return writeDataDir(files);
-      }).then(function () {
-        finishSave(mask);
+        runSave(files, mask);
       }).catch(function (error) {
         if (error && error.name === "AbortError") {
           closeSaveMask(mask);
+          saving = false;
+          setEditorStatus(hasDirty() ? "dirty" : "saved", hasDirty() ? "有未保存修改" : "已取消保存");
           return;
         }
         downloadZip(files, mask);
@@ -1175,7 +1267,8 @@
   function loadFile(key) {
     var ready = storedFile(PATHS[key]);
     if (ready) {
-      state[key] = clone(ready);
+      try { acceptData(key, clone(ready)); }
+      catch (error) { rejectData(key, error); }
       return Promise.resolve();
     }
     return fetch(PATHS[key], { cache: "no-store" }).then(function (response) {
@@ -1186,17 +1279,10 @@
       }
       if (!response.ok) throw new Error("http");
       return response.text().then(function (text) {
-        state[key] = parseDataFile(text);
+        acceptData(key, parseDataFile(text));
       });
     }).catch(function (error) {
-      if (meta.missing[key]) return;
-      if (error && error.message === "http") {
-        meta.bad[key] = PATHS[key] + " 读取失败";
-        return;
-      }
-      meta.fetchFailed = true;
-      state[key] = clone(TEMPLATES[key]);
-      meta.missing[key] = true;
+      rejectData(key, error);
     });
   }
 
@@ -1205,6 +1291,11 @@
     main.addEventListener("input", onEdit);
     main.addEventListener("change", onEdit);
     document.body.addEventListener("click", onClick);
+    window.addEventListener("beforeunload", function (event) {
+      if (!hasDirty()) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
 
     form.on("select(field)", function (data) {
       onEdit({ target: data.elem, type: "change" });
@@ -1213,6 +1304,9 @@
       onEdit({ target: data.elem, type: "change" });
     });
 
+    document.querySelectorAll('.editor-steps > .layui-tab-title > li').forEach(function (tab, index) {
+      tab.setAttribute("lay-id", String(index));
+    });
     element.render("tab");
     element.on("tab(steps)", function (data) {
       if (data.index !== stepIndex && onProfileStep() && !profileEmailOk()) {
@@ -1326,7 +1420,7 @@
     link.click();
     link.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    finishSave(mask, "已下载 data.zip，解压后覆盖原来的 data 目录");
+    finishSave(mask, "已导出 data.zip，请解压后覆盖原来的 data 目录", files);
   }
 
   layui.use(["form", "element", "layer"], function () {
@@ -1343,7 +1437,6 @@
       event.target.value = "";
     });
     Promise.all(ORDER.map(loadFile)).then(function () {
-      if (meta.fetchFailed) document.getElementById("banner").hidden = false;
       renderAll();
     });
   }
